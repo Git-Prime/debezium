@@ -244,4 +244,16 @@ public class PostgresConnectionIT {
             }
         };
     }
+
+    @Test
+    public void shouldPassDatabaseOptions() throws Exception {
+        try (PostgresConnection connection = new PostgresConnection(
+                TestHelper.defaultJdbcConfig().edit().with("options", "-ctcp_keepalives_interval=12345").build())) {
+
+            connection.query("SHOW TCP_KEEPALIVES_INTERVAL", (resultSet) -> {
+                assertTrue("Expected a row", resultSet.next());
+                assertEquals(12345, resultSet.getInt(1));
+            });
+        }
+    }
 }

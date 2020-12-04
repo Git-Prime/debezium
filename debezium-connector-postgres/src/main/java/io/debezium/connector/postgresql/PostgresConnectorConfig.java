@@ -906,6 +906,14 @@ public class PostgresConnectorConfig extends RelationalDatabaseConnectorConfig {
                     "the original value is a toasted value not provided by the database." +
                     "If starts with 'hex:' prefix it is expected that the rest of the string repesents hexadecimally encoded octets.");
 
+    public static final Field OPTIONS = Field.create("options")
+            .withDisplayName("Postgres Options")
+            .withType(Type.STRING)
+            .withWidth(Width.MEDIUM)
+            .withDefault("")
+            .withImportance(Importance.LOW)
+            .withDescription("Options passed to the database server command line (PGOPTIONS)");
+
     private final HStoreHandlingMode hStoreHandlingMode;
     private final IntervalHandlingMode intervalHandlingMode;
     private final SnapshotMode snapshotMode;
@@ -1078,7 +1086,8 @@ public class PostgresConnectorConfig extends RelationalDatabaseConnectorConfig {
                     SSL_SOCKET_FACTORY,
                     STATUS_UPDATE_INTERVAL_MS,
                     TCP_KEEPALIVE,
-                    XMIN_FETCH_INTERVAL)
+                    XMIN_FETCH_INTERVAL,
+                    OPTIONS)
             .events(
                     INCLUDE_UNKNOWN_DATATYPES,
                     DatabaseHeartbeatImpl.HEARTBEAT_ACTION_QUERY,
