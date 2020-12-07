@@ -120,9 +120,7 @@ public class JdbcConnection implements AutoCloseable {
      */
     public static ConnectionFactory patternBasedFactory(String urlPattern, Field... variables) {
         return (config) -> {
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Config: {}", propsWithMaskedPassword(config.asProperties()));
-            }
+            LOGGER.info("JDBC Config: {}", propsWithMaskedPassword(config.asProperties()));
             Properties props = config.asProperties();
             Field[] varsWithDefaults = combineVariables(variables,
                     JdbcConfiguration.HOSTNAME,
@@ -131,14 +129,10 @@ public class JdbcConnection implements AutoCloseable {
                     JdbcConfiguration.PASSWORD,
                     JdbcConfiguration.DATABASE);
             String url = findAndReplace(urlPattern, props, varsWithDefaults);
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Props: {}", propsWithMaskedPassword(props));
-            }
-            LOGGER.trace("URL: {}", url);
+            LOGGER.info("JDBC Props: {}", propsWithMaskedPassword(props));
+            LOGGER.info("JDBC URL: {}", url);
             Connection conn = DriverManager.getConnection(url, props);
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Connected to {} with {}", url, propsWithMaskedPassword(props));
-            }
+            LOGGER.info("JDBC Connected to {} with {}", url, propsWithMaskedPassword(props));
             return conn;
         };
     }
