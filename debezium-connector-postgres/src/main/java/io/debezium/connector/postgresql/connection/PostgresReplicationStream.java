@@ -68,17 +68,13 @@ class PostgresReplicationStream implements ReplicationStream {
 
         walQueue.remove();
 
-        if (messageDecoder.shouldMessageBeSkipped(entry.getData(), entry.getLsn(), startLsn, walPosition)) {
-            return true;
-        }
-
         deserializeMessages(entry, processor);
 
         return true;
     }
 
     private void deserializeMessages(WalEntry entry, ReplicationMessageProcessor processor) throws SQLException, InterruptedException {
-        lastReceivedLsn = Lsn.valueOf(stream.getLastReceiveLSN());
+        lastReceivedLsn = entry.getLsn();
         LOGGER.trace("Received message at LSN {}", lastReceivedLsn);
         messageDecoder.processMessage(entry, processor, typeRegistry);
     }
@@ -168,7 +164,7 @@ class PostgresReplicationStream implements ReplicationStream {
                 LOGGER.trace("Streaming requested from LSN {}, received LSN {}", startLsn, lastReceivedLsn);
 
                 if (!messageDecoder.shouldMessageBeSkipped(read, lastReceivedLsn, startLsn, walPosition)) {
-                    walQueue.add(new WalEntry(this.lastReceivedLsn, read));
+                    walQueue.add(new WalEntry(lastReceivedLsn, read));
                 }
 
                 if (!threadsRunning.get()) {
