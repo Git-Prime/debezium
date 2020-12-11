@@ -18,9 +18,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.debezium.connector.postgresql.TypeRegistry;
-import io.debezium.connector.postgresql.connection.*;
+import io.debezium.connector.postgresql.connection.AbstractMessageDecoder;
+import io.debezium.connector.postgresql.connection.MessageDecoderConfig;
 import io.debezium.connector.postgresql.connection.ReplicationMessage.Operation;
 import io.debezium.connector.postgresql.connection.ReplicationStream.ReplicationMessageProcessor;
+import io.debezium.connector.postgresql.connection.TransactionMessage;
+import io.debezium.connector.postgresql.connection.WalEntry;
 import io.debezium.document.Array;
 import io.debezium.document.Array.Entry;
 import io.debezium.document.Document;
