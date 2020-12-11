@@ -338,6 +338,8 @@ public class ReplicationConnectionIT {
             throws Exception {
         List<ReplicationMessage> actualMessages = new ArrayList<>();
 
+        stream.startThreads(Executors.newScheduledThreadPool(1));
+
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         Semaphore latch = new Semaphore(0);
         Metronome metronome = Metronome.sleeper(Duration.ofMillis(50), Clock.SYSTEM);
@@ -372,6 +374,7 @@ public class ReplicationConnectionIT {
         }
         finally {
             executorService.shutdownNow();
+            stream.stopThreads();
         }
         return actualMessages;
     }
