@@ -114,7 +114,7 @@ public class PostgresStreamingChangeEventSource implements StreamingChangeEventS
             // such that the connection times out. We must enable keep
             // alive to ensure that it doesn't time out
             ReplicationStream stream = this.replicationStream.get();
-            stream.startKeepAlive(Executors.newSingleThreadExecutor());
+            stream.startThreads(Executors.newScheduledThreadPool(1));
 
             // refresh the schema so we have a latest view of the DB tables
             taskContext.refreshSchema(connection, true);
@@ -138,11 +138,11 @@ public class PostgresStreamingChangeEventSource implements StreamingChangeEventS
                     LOGGER.info("Commit failed while preparing for reconnect", e);
                 }
                 walPosition.enableFiltering();
-                stream.stopKeepAlive();
+                stream.stopThreads();
                 replicationConnection.reconnect();
                 replicationStream.set(replicationConnection.startStreaming(walPosition.getLastEventStoredLsn(), walPosition));
                 stream = this.replicationStream.get();
-                stream.startKeepAlive(Executors.newSingleThreadExecutor());
+                stream.startThreads(Executors.newScheduledThreadPool(1));
             }
             processMessages(context, stream);
         }
@@ -156,7 +156,7 @@ public class PostgresStreamingChangeEventSource implements StreamingChangeEventS
                 // executor pool
                 ReplicationStream stream = replicationStream.get();
                 if (stream != null) {
-                    stream.stopKeepAlive();
+                    stream.stopThreads();
                 }
                 // TODO author=Horia Chiorean date=08/11/2016 description=Ideally we'd close the stream, but it's not reliable atm (see javadoc)
                 // replicationStream.close();
@@ -182,9 +182,7 @@ public class PostgresStreamingChangeEventSource implements StreamingChangeEventS
         while (context.isRunning() && (offsetContext.getStreamingStoppingLsn() == null ||
                 (lastCompletelyProcessedLsn.compareTo(offsetContext.getStreamingStoppingLsn()) < 0))) {
 
-            boolean receivedMessage = stream.readPending(message -> {
-                final Lsn lsn = stream.lastReceivedLsn();
-
+            boolean receivedMessage = stream.readPending((lsn, message) -> {
                 if (message.isLastEventForLsn()) {
                     lastCompletelyProcessedLsn = lsn;
                 }
@@ -270,9 +268,8 @@ public class PostgresStreamingChangeEventSource implements StreamingChangeEventS
         LOGGER.info("Searching for WAL resume position");
         while (context.isRunning() && resumeLsn.get() == null) {
 
-            boolean receivedMessage = stream.readPending(message -> {
-                final Lsn lsn = stream.lastReceivedLsn();
-                resumeLsn.set(walPosition.resumeFromLsn(lsn, message).orElse(null));
+            boolean receivedMessage = stream.readPending((lsn, message) -> {
+                resumeLsn.set(walPosition.resumeFromLsn(stream.lastReceivedLsn(), message).orElse(null));
             });
 
             if (receivedMessage) {

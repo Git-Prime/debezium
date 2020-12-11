@@ -5,7 +5,6 @@
  */
 package io.debezium.connector.postgresql.connection.pgproto;
 
-import java.nio.ByteBuffer;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Set;
@@ -21,6 +20,7 @@ import io.debezium.connector.postgresql.TypeRegistry;
 import io.debezium.connector.postgresql.connection.AbstractMessageDecoder;
 import io.debezium.connector.postgresql.connection.MessageDecoderConfig;
 import io.debezium.connector.postgresql.connection.ReplicationStream.ReplicationMessageProcessor;
+import io.debezium.connector.postgresql.connection.WalEntry;
 import io.debezium.connector.postgresql.proto.PgProto;
 import io.debezium.connector.postgresql.proto.PgProto.Op;
 import io.debezium.connector.postgresql.proto.PgProto.RowMessage;
@@ -45,15 +45,15 @@ public class PgProtoMessageDecoder extends AbstractMessageDecoder {
     }
 
     @Override
-    public void processNotEmptyMessage(final ByteBuffer buffer, ReplicationMessageProcessor processor, TypeRegistry typeRegistry)
+    public void processNotEmptyMessage(final WalEntry entry, ReplicationMessageProcessor processor, TypeRegistry typeRegistry)
             throws SQLException, InterruptedException {
         try {
-            if (!buffer.hasArray()) {
+            if (!entry.getData().hasArray()) {
                 throw new IllegalStateException(
                         "Invalid buffer received from Postgres server during streaming replication");
             }
-            final byte[] source = buffer.array();
-            final byte[] content = Arrays.copyOfRange(source, buffer.arrayOffset(), source.length);
+            final byte[] source = entry.getData().array();
+            final byte[] content = Arrays.copyOfRange(source, entry.getData().arrayOffset(), source.length);
             final RowMessage message = PgProto.RowMessage.parseFrom(content);
             LOGGER.trace("Received protobuf message from the server {}", message);
             if (!message.getNewTypeinfoList().isEmpty() && message.getNewTupleCount() != message.getNewTypeinfoCount()) {
@@ -69,7 +69,7 @@ public class PgProtoMessageDecoder extends AbstractMessageDecoder {
                 }
                 return;
             }
-            processor.process(new PgProtoReplicationMessage(message, typeRegistry));
+            processor.process(entry.getLsn(), new PgProtoReplicationMessage(message, typeRegistry));
         }
         catch (InvalidProtocolBufferException e) {
             throw new ConnectException(e);

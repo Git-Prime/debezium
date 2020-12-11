@@ -26,11 +26,11 @@ public interface MessageDecoder {
     /**
      * Process a message upon arrival from logical decoder
      *
-     * @param buffer - binary representation of replication message
+     * @param entry - binary representation of replication message
      * @param processor - message processing on arrival
      * @param typeRegistry - registry with known types
      */
-    void processMessage(ByteBuffer buffer, ReplicationMessageProcessor processor, TypeRegistry typeRegistry) throws SQLException, InterruptedException;
+    void processMessage(WalEntry entry, ReplicationMessageProcessor processor, TypeRegistry typeRegistry) throws SQLException, InterruptedException;
 
     /**
      * Allows MessageDecoder to configure options with which the replication stream is started.

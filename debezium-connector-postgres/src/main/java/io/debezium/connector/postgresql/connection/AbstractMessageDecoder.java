@@ -33,17 +33,17 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
     }
 
     @Override
-    public void processMessage(ByteBuffer buffer, ReplicationMessageProcessor processor, TypeRegistry typeRegistry) throws SQLException, InterruptedException {
+    public void processMessage(WalEntry entry, ReplicationMessageProcessor processor, TypeRegistry typeRegistry) throws SQLException, InterruptedException {
         // if message is empty pass control right to ReplicationMessageProcessor to update WAL position info
-        if (buffer == null) {
-            processor.process(null);
+        if (entry == null || entry.getData() == null) {
+            processor.process(Lsn.INVALID_LSN, null);
         }
         else {
-            processNotEmptyMessage(buffer, processor, typeRegistry);
+            processNotEmptyMessage(entry, processor, typeRegistry);
         }
     }
 
-    protected abstract void processNotEmptyMessage(ByteBuffer buffer, ReplicationMessageProcessor processor, TypeRegistry typeRegistry)
+    protected abstract void processNotEmptyMessage(WalEntry entry, ReplicationMessageProcessor processor, TypeRegistry typeRegistry)
             throws SQLException, InterruptedException;
 
     @Override
